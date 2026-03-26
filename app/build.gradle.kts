@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
 }
 
 android {
@@ -40,6 +41,12 @@ android {
 }
 
 dependencies {
+    val roomVersion = "2.8.4"
+    implementation("androidx.room:room-runtime:${roomVersion}")
+    implementation("androidx.room:room-ktx:${roomVersion}")
+    ksp("androidx.room:room-compiler:$roomVersion")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.2")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
