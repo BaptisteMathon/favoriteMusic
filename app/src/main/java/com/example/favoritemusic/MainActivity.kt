@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -68,7 +69,18 @@ import com.example.favoritemusic.ui.theme.FavoriteMusicTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-
+import com.example.favoritemusic.model.Music
+import com.example.favoritemusic.model.Users
+import com.example.favoritemusic.data.AppDb
+import com.example.favoritemusic.data.MusicDao
+import com.example.favoritemusic.data.UserDao
+import com.example.favoritemusic.ui.HomeScreen
+import com.example.favoritemusic.ui.DetailScreen
+import com.example.favoritemusic.ui.AuthScreen
+import com.example.favoritemusic.ui.MusicViewModel
+import com.example.favoritemusic.ui.MusicViewModelFactory
+import com.example.favoritemusic.ui.UserViewModel
+import com.example.favoritemusic.ui.UserViewModelFactory
 
 
 class MainActivity : ComponentActivity() {
@@ -81,6 +93,9 @@ class MainActivity : ComponentActivity() {
             .build()
         val musicDao = db.daoMusic()
         val userDao = db.daoUser()
+
+        val viewModelMusic : MusicViewModel by viewModels { MusicViewModelFactory(musicDao) }
+        val viewModelUser : UserViewModel by viewModels { UserViewModelFactory(userDao) }
 
         lifecycleScope.launch(Dispatchers.IO){
             try {
@@ -111,342 +126,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FavoriteMusicTheme {
-                    MyApp(musicDao, userDao)
+                    MyApp(viewModelMusic, viewModelUser)
             }
         }
 
     }
 }
-@Composable
-fun HomeScreen(navController: NavController, daoMusic: MusicDao) {
 
-    val musics by daoMusic.getAll().collectAsState(initial = emptyList())
 
-    var currentIndex by remember { mutableIntStateOf(0) }
-
-    var musicTitle = ""
-    var musicArtist = ""
-    var musicCover = R.drawable.ic_launcher_background
-
-    if (musics.isNotEmpty()){
-        musicTitle = musics[currentIndex].titre
-        musicArtist = musics[currentIndex].artiste
-        musicCover = musics[currentIndex].cover
-    }
-
-        Column (
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Card (
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(500.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = musicCover),
-                        contentDescription = "Music Cover",
-                        modifier = Modifier
-                            .fillMaxWidth(1f)
-//                            .fillMaxHeight(0.9f)
-                            .padding(16.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .shadow(8.dp, RoundedCornerShape(24.dp)),
-                        contentScale = ContentScale.Crop,
-                    )
-
-                    Column (
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 40.dp, bottom = 40.dp)
-                    ) {
-                        Text(
-                            text = musicTitle,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                color = Color.Black,
-                                shadow = Shadow(color = Color.Black, blurRadius = 10f)
-                            ),
-
-                            color = Color.White,
-                        )
-                        Text(
-                            text = musicArtist,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                color = Color.Black,
-                                shadow = Shadow(color = Color.Black, blurRadius = 10f)
-                            ),
-                            modifier = Modifier.padding(1.dp),
-                            color = Color.White,
-                        )
-                    }
-
-                }
-
-                Row (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Button( onClick = {
-                        if(currentIndex+1 != musics.size) {
-                            currentIndex += 1
-                        }
-                    } ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Dislike"
-                        )
-                    }
-
-                    Button( onClick = {
-                        if(currentIndex+1 != musics.size) {
-                            currentIndex += 1
-                        }
-                    } ) {
-                        Icon(
-                            imageVector = Icons.Default.Favorite,
-                            contentDescription = "Like"
-                        )
-                    }
-                }
-            }
-
-        }
-}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScreen(daoMusic: MusicDao) {
-    val musics by daoMusic.getAll().collectAsState(initial = emptyList())
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text("Toutes les musiques")
-
-        if (musics.isEmpty()) {
-            Text("Pas de musique pour le moment")
-        } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(musics) { music ->
-                    Card (
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("${music.titre}")
-                        Text("${music.artiste}")
-                        Image(
-                            painter = painterResource(id = music.cover),
-                            contentDescription = "Music Cover",
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AuthScreen(navController: NavController, daoUser: UserDao) {
-    var isLoginMode by remember {mutableStateOf(true)}
-
-    val scope = rememberCoroutineScope()
-
-    var username by remember {mutableStateOf("")}
-    var email by remember {mutableStateOf("")}
-    var password by remember {mutableStateOf("")}
-
-    var error1 by remember {mutableStateOf(false)}
-    var error2 by remember {mutableStateOf(false)}
-    var error3 by remember {mutableStateOf(false)}
-    var error4 by remember {mutableStateOf(false)}
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        if(isLoginMode) {
-
-            when (true) {
-                error1 -> {
-                    Text(
-                        text = "Veuillez renseigné tous les champs",
-                        modifier = Modifier
-                            .background(Color.Red)
-                            .padding(horizontal = 16.dp, vertical = 5.dp),
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-                error2 -> {
-                    Text(
-                        text = "L'email ou mot de passe incorrect",
-                        modifier = Modifier
-                            .background(Color.Red)
-                            .padding(horizontal = 16.dp, vertical = 5.dp),
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                }
-                else -> {}
-            }
-
-            Text("Connexion : ")
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextField(
-                value = email,
-                onValueChange = {email = it},
-                label = { Text("Email")},
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextField(
-                value = password,
-                onValueChange = {password = it},
-                label = {Text("Mot de passe")},
-                visualTransformation = PasswordVisualTransformation()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button( onClick = {
-                if (email.isNotBlank() && password.isNotBlank()) {
-                    scope.launch(Dispatchers.IO) {
-                        val user = daoUser.getUserByEmail(email)
-
-                        if(user != null && user.password == password) {
-                            launch(Dispatchers.Main) {
-                                navController.navigate("home")
-                            }
-                        } else {
-                            error2 = true
-                            error1 = false
-                        }
-                    }
-                } else {
-                    error1 = true
-                    error2 = false
-                }
-            }) {
-                Text("Se connecter")
-            }
-        } else {
-
-            when (true) {
-                error3 -> {
-                    Text(
-                        text = "Veuillez renseigné tous les champs",
-                        modifier = Modifier
-                            .background(Color.Red)
-                            .padding(horizontal = 16.dp, vertical = 5.dp),
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-                error4 -> {
-                    Text(
-                        text = "Un utilisateur existe déjà avec cette adresse mail",
-                        modifier = Modifier
-                            .background(Color.Red)
-                            .padding(horizontal = 16.dp, vertical = 5.dp),
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                }
-                else -> {}
-            }
-
-            Text("Inscription : ")
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextField(
-                value = email,
-                onValueChange = {email = it},
-                label = { Text("Email")},
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextField(
-                value = username,
-                onValueChange = {username = it},
-                label = {Text("Nom d'utilisateur")}
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextField(
-                value = password,
-                onValueChange = {password = it},
-                label = {Text("Mot de passe")},
-                visualTransformation = PasswordVisualTransformation()
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button( onClick = {
-                if (email.isNotBlank() && password.isNotBlank() && username.isNotBlank()) {
-                    scope.launch{
-
-                        val user = daoUser.getUserByEmail(email)
-
-                        if(user == null) {
-                            daoUser.insert(Users(username = username, email = email, password = password))
-                            navController.navigate("home")
-                        } else {
-                            error4 = true
-                            error3 = false
-                        }
-                    }
-                } else {
-                    error3 = true
-                    error4 = false
-                }
-            }) {
-                Text("S'inscrire")
-            }
-        }
-
-        TextButton( onClick = {isLoginMode = !isLoginMode}) {
-            if(isLoginMode) {
-                Text("Inscrivez-vous")
-            } else {
-                Text("Connectez-vous")
-            }
-        }
-
-
-    }
-
-}
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MyApp(daoMusic: MusicDao, daoUser: UserDao) {
+fun MyApp(musicViewModel: MusicViewModel, userViewModel: UserViewModel) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -497,13 +187,13 @@ fun MyApp(daoMusic: MusicDao, daoUser: UserDao) {
                 .padding(innerPadding)
         ) {
             composable("home") {
-                HomeScreen(navController, daoMusic)
+                HomeScreen(navController, musicViewModel)
             }
             composable("detail") {
-                DetailScreen(daoMusic)
+                DetailScreen(musicViewModel)
             }
             composable("auth") {
-                AuthScreen(navController, daoUser)
+                AuthScreen(navController, userViewModel)
             }
         }
 
