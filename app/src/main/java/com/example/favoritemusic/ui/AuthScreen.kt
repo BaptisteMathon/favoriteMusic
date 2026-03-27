@@ -111,8 +111,9 @@ fun AuthScreen(navController: NavController, viewModel: UserViewModel) {
 //                        val user = daoUser.getUserByEmail(email)
                         val user = viewModel.getUserByEmail(email)
 
-                        if(user != null && user.password == password) {
+                        if(user != null && user.password == viewModel.hashPassword(password)) {
                             launch(Dispatchers.Main) {
+                                viewModel.currentUser = user
                                 navController.navigate("home")
                             }
                         } else {
@@ -190,10 +191,16 @@ fun AuthScreen(navController: NavController, viewModel: UserViewModel) {
                     scope.launch{
 
 //                        val user = daoUser.getUserByEmail(email)
-                        val user = viewModel.getUserByEmail(email)
+                        val existingUser = viewModel.getUserByEmail(email)
 
-                        if(user == null) {
+                        if(existingUser == null) {
+                            val newUser = Users (
+                                username = username,
+                                email = email,
+                                password = password
+                            )
                             viewModel.addUser( username,  email,  password)
+                            viewModel.currentUser = newUser
                             navController.navigate("home")
                         } else {
                             errorUserExist = true

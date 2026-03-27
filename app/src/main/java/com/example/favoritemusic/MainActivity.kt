@@ -63,6 +63,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import com.example.favoritemusic.ui.theme.FavoriteMusicTheme
@@ -79,6 +80,7 @@ import com.example.favoritemusic.ui.DetailScreen
 import com.example.favoritemusic.ui.AuthScreen
 import com.example.favoritemusic.ui.MusicViewModel
 import com.example.favoritemusic.ui.MusicViewModelFactory
+import com.example.favoritemusic.ui.ProfilScreen
 import com.example.favoritemusic.ui.UserViewModel
 import com.example.favoritemusic.ui.UserViewModelFactory
 
@@ -139,42 +141,48 @@ class MainActivity : ComponentActivity() {
 fun MyApp(musicViewModel: MusicViewModel, userViewModel: UserViewModel) {
     val navController = rememberNavController()
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Favorite Music") })
         },
         bottomBar = {
-            BottomAppBar {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Button( onClick = {navController.navigate("home")} ) {
-                        Icon(
-                            imageVector = Icons.Default.Home,
-                            contentDescription = "Accueil"
-                        )
+            if(currentRoute != "auth"){
+                BottomAppBar {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button( onClick = {navController.navigate("home")} ) {
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = "Accueil"
+                            )
+                        }
+
+                        Button( onClick = { navController.navigate("detail")} ) {
+                            Icon (
+                                imageVector = Icons.Default.List,
+                                contentDescription = "Library"
+                            )
+                        }
+
+                        Button( onClick = { navController.navigate("profil") }) {
+                            Icon (
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "Profil"
+                            )
+                        }
                     }
 
-                    Button( onClick = { navController.navigate("detail")} ) {
-                        Icon (
-                            imageVector = Icons.Default.List,
-                            contentDescription = "Library"
-                        )
-                    }
-
-                    Button( onClick = {}) {
-                        Icon (
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = "Profil"
-                        )
-                    }
                 }
-
             }
+
         }
     )
     { innerPadding ->
@@ -194,6 +202,9 @@ fun MyApp(musicViewModel: MusicViewModel, userViewModel: UserViewModel) {
             }
             composable("auth") {
                 AuthScreen(navController, userViewModel)
+            }
+            composable("profil") {
+                ProfilScreen(userViewModel, navController)
             }
         }
 
