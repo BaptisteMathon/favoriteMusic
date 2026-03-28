@@ -31,11 +31,16 @@ class UserViewModel(private val dao: UserDao): ViewModel() {
             viewModelScope.launch{
                 val hashedPassword = hashPassword(password)
 
-                dao.insert(Users(
+                val newUser = Users(
                     username = username,
                     email = email,
                     password = hashedPassword
-                ))
+                )
+
+                val idGenere = dao.insert(newUser)
+
+                currentUser = newUser.copy(userId = idGenere.toInt())
+
             }
         }
     }

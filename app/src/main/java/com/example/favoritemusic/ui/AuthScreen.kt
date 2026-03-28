@@ -113,7 +113,7 @@ fun AuthScreen(navController: NavController, viewModel: UserViewModel) {
 
                         if(user != null && user.password == viewModel.hashPassword(password)) {
                             launch(Dispatchers.Main) {
-                                viewModel.currentUser = user
+                                    viewModel.currentUser = user
                                 navController.navigate("home")
                             }
                         } else {

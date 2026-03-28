@@ -38,23 +38,41 @@ import com.example.favoritemusic.R
 import com.example.favoritemusic.data.MusicDao
 import androidx.compose.runtime.*
 import com.example.favoritemusic.model.Music
+import com.example.favoritemusic.model.MusicByUser
+import com.example.favoritemusic.ui.UserViewModel
+import com.example.favoritemusic.ui.FavoriteMusicUserViewModel
+import kotlinx.coroutines.flow.compose
 
 @Composable
-fun HomeScreen(navController: NavController, viewModel: MusicViewModel) {
+fun HomeScreen(navController: NavController, viewModel: MusicViewModel, userViewModel: UserViewModel, favoriteViewModel: FavoriteMusicUserViewModel) {
 
 //    val musics by daoMusic.getAll().collectAsState(initial = emptyList())
     val musics by viewModel.musics.collectAsState()
+    val favoritesMusics by favoriteViewModel.getAllFavoritesMusicsByUsers.collectAsState()
 
     var currentIndex by remember { mutableIntStateOf(0) }
+    val currentUser = userViewModel.currentUser
+
+    val musicsToDiscover: List<Music> = remember(musics, favoritesMusics, currentUser) {
+        musics.filter { music: Music ->
+            favoritesMusics.none { fav: MusicByUser ->
+                fav.titre == music.titre && fav.userId == currentUser?.userId
+            }
+        }
+    }
+
+    if(currentIndex >= musicsToDiscover.size) {
+        currentIndex = 0
+    }
 
     var musicTitle = ""
     var musicArtist = ""
     var musicCover = R.drawable.ic_launcher_background
 
-    if (musics.isNotEmpty()){
-        musicTitle = musics[currentIndex].titre
-        musicArtist = musics[currentIndex].artiste
-        musicCover = musics[currentIndex].cover
+    if (musicsToDiscover.isNotEmpty()){
+        musicTitle = musicsToDiscover[currentIndex].titre
+        musicArtist = musicsToDiscover[currentIndex].artiste
+        musicCover = musicsToDiscover[currentIndex].cover
     }
 
     Column (
@@ -120,7 +138,7 @@ fun HomeScreen(navController: NavController, viewModel: MusicViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button( onClick = {
-                    if(currentIndex+1 != musics.size) {
+                    if(currentIndex+1 != musicsToDiscover.size) {
                         currentIndex += 1
                     }
                 } ) {
@@ -131,9 +149,21 @@ fun HomeScreen(navController: NavController, viewModel: MusicViewModel) {
                 }
 
                 Button( onClick = {
-                    if(currentIndex+1 != musics.size) {
+                    if(currentIndex+1 != musicsToDiscover.size) {
                         currentIndex += 1
                     }
+
+                    val currentUser = userViewModel.currentUser
+
+                    if(currentUser != null){
+                        favoriteViewModel.addFavoriteMusic(
+                            title = musicTitle,
+                            artist = musicArtist,
+                            cover = musicCover,
+                            userId = currentUser.userId
+                        )
+                    }
+
                 } ) {
                     Icon(
                         imageVector = Icons.Default.Favorite,

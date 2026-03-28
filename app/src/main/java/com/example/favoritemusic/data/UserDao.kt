@@ -16,7 +16,7 @@ interface UserDao {
     suspend fun getUserByEmail(email: String): Users?
 
     @Insert
-    suspend fun insert(user: Users)
+    suspend fun insert(user: Users): Long
 
     @Delete
     suspend fun delete(user: Users)

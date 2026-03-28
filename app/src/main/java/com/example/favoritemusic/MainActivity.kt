@@ -78,6 +78,8 @@ import com.example.favoritemusic.data.UserDao
 import com.example.favoritemusic.ui.HomeScreen
 import com.example.favoritemusic.ui.DetailScreen
 import com.example.favoritemusic.ui.AuthScreen
+import com.example.favoritemusic.ui.FavoriteMusicUserViewModel
+import com.example.favoritemusic.ui.FavoriteMusicUserViewModelFactory
 import com.example.favoritemusic.ui.MusicViewModel
 import com.example.favoritemusic.ui.MusicViewModelFactory
 import com.example.favoritemusic.ui.ProfilScreen
@@ -95,9 +97,11 @@ class MainActivity : ComponentActivity() {
             .build()
         val musicDao = db.daoMusic()
         val userDao = db.daoUser()
+        val userFavoriteMusicDao = db.daoFavoriteMusicByUser()
 
         val viewModelMusic : MusicViewModel by viewModels { MusicViewModelFactory(musicDao) }
         val viewModelUser : UserViewModel by viewModels { UserViewModelFactory(userDao) }
+        val viewModelFavoriteMusic : FavoriteMusicUserViewModel by viewModels { FavoriteMusicUserViewModelFactory(userFavoriteMusicDao) }
 
         lifecycleScope.launch(Dispatchers.IO){
             try {
@@ -128,7 +132,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FavoriteMusicTheme {
-                    MyApp(viewModelMusic, viewModelUser)
+                    MyApp(viewModelMusic, viewModelUser, viewModelFavoriteMusic)
             }
         }
 
@@ -138,7 +142,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyApp(musicViewModel: MusicViewModel, userViewModel: UserViewModel) {
+fun MyApp(musicViewModel: MusicViewModel, userViewModel: UserViewModel, favoriteMusicByUser: FavoriteMusicUserViewModel) {
     val navController = rememberNavController()
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -195,10 +199,10 @@ fun MyApp(musicViewModel: MusicViewModel, userViewModel: UserViewModel) {
                 .padding(innerPadding)
         ) {
             composable("home") {
-                HomeScreen(navController, musicViewModel)
+                HomeScreen(navController, musicViewModel, userViewModel, favoriteMusicByUser)
             }
             composable("detail") {
-                DetailScreen(musicViewModel)
+                DetailScreen(userViewModel, favoriteMusicByUser)
             }
             composable("auth") {
                 AuthScreen(navController, userViewModel)
